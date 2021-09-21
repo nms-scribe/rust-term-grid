@@ -132,10 +132,13 @@ pub enum Alignment {
 pub struct Cell {
 
     /// The string to display when this cell gets rendered.
-    pub contents: String,
+    pub contents: Vec<String>, // NMS: Allowing multi-line strings now.
 
     /// The pre-computed length of the string.
     pub width: Width,
+
+    /// The pre-computed height of the string,
+    pub height: Width,
 
     /// The side (left/right) to align the content if some filling is required.
     pub alignment: Alignment,
@@ -143,9 +146,15 @@ pub struct Cell {
 
 impl From<String> for Cell {
     fn from(string: String) -> Self {
+        // NMS: Support multi-line
+        let contents: Vec<String> = string.lines().map(|s| s.to_string()).collect();
+        // NMS: TODO: Convert to grapheme count?
+        let width = contents.iter().fold(0,|acc,string| std::cmp::max(acc,UnicodeWidthStr::width(string.as_str())) );
+        let height = contents.len();
         Self {
-            width: UnicodeWidthStr::width(&*string),
-            contents: string,
+            contents,
+            width,
+            height,
             alignment: Alignment::Left,
         }
     }
@@ -153,9 +162,14 @@ impl From<String> for Cell {
 
 impl<'a> From<&'a str> for Cell {
     fn from(string: &'a str) -> Self {
+        // NMS: Support multi-line
+        let contents: Vec<String> = string.lines().map(|s| s.to_string()).collect();
+        let width = contents.iter().fold(0,|acc,string| std::cmp::max(acc,UnicodeWidthStr::width(string.as_str())) );
+        let height = contents.len();
         Self {
-            width: UnicodeWidthStr::width(&*string),
-            contents: string.into(),
+            contents,
+            width,
+            height,
             alignment: Alignment::Left,
         }
     }
@@ -219,8 +233,9 @@ pub struct GridOptions {
 #[derive(PartialEq, Debug)]
 struct Dimensions {
 
-    /// The number of lines in the grid.
-    num_lines: Width,
+    /// The height of each row in the grid. The length of this vector serves
+    /// as the number of rows.
+    heights: Vec<Width>,
 
     /// The width of each column in the grid. The length of this vector serves
     /// as the number of columns.
@@ -310,16 +325,23 @@ impl Grid {
     }
 
     fn column_widths(&self, num_lines: usize, num_columns: usize) -> Dimensions {
+        // NMS: row heights are now variable.
         let mut widths: Vec<Width> = repeat(0).take(num_columns).collect();
+        let mut heights: Vec<Width> = repeat(1).take(num_lines).collect(); 
         for (index, cell) in self.cells.iter().enumerate() {
-            let index = match self.options.direction {
+            let col_index = match self.options.direction {
                 Direction::LeftToRight  => index % num_columns,
                 Direction::TopToBottom  => index / num_lines,
             };
-            widths[index] = max(widths[index], cell.width);
+            let line_index = match self.options.direction {
+                Direction::LeftToRight => index / num_columns,
+                Direction::TopToBottom => index % num_lines
+            };
+            widths[col_index] = max(widths[col_index], cell.width);
+            heights[line_index] = max(heights[line_index], cell.height);
         }
 
-        Dimensions { num_lines, widths }
+        Dimensions { heights, widths }
     }
 
     fn theoretical_max_num_lines(&self, maximum_width: usize) -> usize {
@@ -357,12 +379,14 @@ impl Grid {
         }
 
         if self.cell_count == 0 {
-            return Some(Dimensions { num_lines: 0, widths: Vec::new() });
+            // NMS: heights are now variable
+            return Some(Dimensions { heights: Vec::new(), widths: Vec::new() });
         }
 
         if self.cell_count == 1 {
             let the_cell = &self.cells[0];
-            return Some(Dimensions { num_lines: 1, widths: vec![ the_cell.width ] });
+            // NMS: heights are now variable
+            return Some(Dimensions { heights: vec![ the_cell.height ], widths: vec![ the_cell.width ] });
         }
 
         let theoretical_max_num_lines = self.theoretical_max_num_lines(maximum_width);
@@ -370,7 +394,8 @@ impl Grid {
             // This if—statement is neccesary for the function to work correctly
             // for small inputs.
             return Some(Dimensions {
-                num_lines: 1,
+                // NMS: heights are now 
+                heights: vec![ self.cells.clone().into_iter().fold(1,|acc,cell| max(acc,cell.height)) ],
                 // I clone self.cells twice. Once here, and once in
                 // self.theoretical_max_num_lines. Perhaps not the best for
                 // performance?
@@ -440,7 +465,8 @@ impl Display<'_> {
 
     /// Returns how many rows this display takes up.
     pub fn row_count(&self) -> usize {
-        self.dimensions.num_lines
+        // NMS: heights are now variable, but here I think we just want the number of rows.
+        self.dimensions.heights.len()
     }
 
     /// Returns whether this display takes up as many columns as were allotted
@@ -457,53 +483,81 @@ impl Display<'_> {
 
 impl fmt::Display for Display<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        for y in 0 .. self.dimensions.num_lines {
-            for x in 0 .. self.dimensions.widths.len() {
-                let num = match self.grid.options.direction {
-                    Direction::LeftToRight  => y * self.dimensions.widths.len() + x,
-                    Direction::TopToBottom  => y + self.dimensions.num_lines * x,
-                };
+        for y in 0 .. self.dimensions.heights.len() {
 
-                // Abandon a line mid-way through if that’s where the cells end
-                if num >= self.grid.cells.len() {
-                    continue;
+            // NMS: Loop through each line in the dimensions...
+            for y2 in 0 .. self.dimensions.heights[y] {
+
+                // NMS: Added here so we don't have line feeds after the last line.
+                if (y > 0) || (y2 > 0) {
+                    writeln!(f)?;
                 }
 
-                let cell = &self.grid.cells[num];
-                if x == self.dimensions.widths.len() - 1 {
-                    match cell.alignment {
-                        Alignment::Left => {
-                            // The final column doesn’t need to have trailing spaces,
-                            // as long as it’s left-aligned.
-                            write!(f, "{}", cell.contents)?;
-                        },
-                        Alignment::Right => {
-                            let extra_spaces = self.dimensions.widths[x] - cell.width;
-                            write!(f, "{}", pad_string(&cell.contents, extra_spaces, Alignment::Right))?;
+                for x in 0 .. self.dimensions.widths.len() {
+                    let num = match self.grid.options.direction {
+                        Direction::LeftToRight  => y * self.dimensions.widths.len() + x,
+                        Direction::TopToBottom  => y + self.dimensions.heights.len() * x,
+                    };
+
+                    // Abandon a line mid-way through if that’s where the cells end
+                    if num >= self.grid.cells.len() {
+                        continue;
+                    }
+
+                    let cell = &self.grid.cells[num];
+
+                    // NMS: Only print the current line of the row
+                    let contents = if cell.height > y2 { 
+                        &cell.contents[y2] 
+                    } else { 
+                        "" 
+                    };
+
+                    // NMS: Need to base this off the width of this line, not the whole cell..
+                    let width = if cell.height > y2 { 
+                        UnicodeWidthStr::width(contents)
+                    } else { 
+                        0 
+                    };
+
+                    // NMS: TODO: What is going on here? Also, can't we just let the format! function do the padding?
+                    if x == self.dimensions.widths.len() - 1 {
+                        match cell.alignment {
+                            Alignment::Left => {
+                                // The final column doesn’t need to have trailing spaces,
+                                // as long as it’s left-aligned.
+                                write!(f, "{}", contents)?;
+                            },
+                            Alignment::Right => {
+                                let extra_spaces = self.dimensions.widths[x] - width;
+                                write!(f, "{}", pad_string(&contents, extra_spaces, Alignment::Right))?;
+                            }
+                        }
+                    }
+                    else {
+                        assert!(self.dimensions.widths[x] >= width);
+                        match (&self.grid.options.filling, cell.alignment) {
+                            (Filling::Spaces(n), Alignment::Left) => {
+                                let extra_spaces = self.dimensions.widths[x] - width + n;
+                                write!(f, "{}", pad_string(&contents, extra_spaces, cell.alignment))?;
+                            },
+                            (Filling::Spaces(n), Alignment::Right) => {
+                                let s = spaces(*n);
+                                let extra_spaces = self.dimensions.widths[x] - width;
+                                write!(f, "{}{}", pad_string(&contents, extra_spaces, cell.alignment), s)?;
+                            },
+                            (Filling::Text(ref t), _) => {
+                                let extra_spaces = self.dimensions.widths[x] - width;
+                                write!(f, "{}{}", pad_string(&contents, extra_spaces, cell.alignment), t)?;
+                            },
                         }
                     }
                 }
-                else {
-                    assert!(self.dimensions.widths[x] >= cell.width);
-                    match (&self.grid.options.filling, cell.alignment) {
-                        (Filling::Spaces(n), Alignment::Left) => {
-                            let extra_spaces = self.dimensions.widths[x] - cell.width + n;
-                            write!(f, "{}", pad_string(&cell.contents, extra_spaces, cell.alignment))?;
-                        },
-                        (Filling::Spaces(n), Alignment::Right) => {
-                            let s = spaces(*n);
-                            let extra_spaces = self.dimensions.widths[x] - cell.width;
-                            write!(f, "{}{}", pad_string(&cell.contents, extra_spaces, cell.alignment), s)?;
-                        },
-                        (Filling::Text(ref t), _) => {
-                            let extra_spaces = self.dimensions.widths[x] - cell.width;
-                            write!(f, "{}{}", pad_string(&cell.contents, extra_spaces, cell.alignment), t)?;
-                        },
-                    }
-                }
-            }
 
-            writeln!(f)?;
+                // NMS: I don't want a linefeed after the last line, so I moved this code to the top of the loop.
+                //writeln!(f)?;
+
+            }
         }
 
         Ok(())
