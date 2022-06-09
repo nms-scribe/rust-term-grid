@@ -1,6 +1,6 @@
 [package]
 name = "term_grid"
-description = "Library for formatting strings into a grid layout"
+description = "Library for formatting strings into a grid layout (fork)"
 
 authors = ["Benjamin Sago <ogham@bsago.me>"]
 documentation = "https://docs.rs/term_grid/"

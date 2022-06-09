@@ -597,7 +597,7 @@ mod test {
 
         let display = grid.fit_into_width(40).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 0);
+        assert!(display.dimensions.heights.is_empty());
         assert!(display.dimensions.widths.is_empty());
 
         assert_eq!(display.width(), 0);
@@ -614,7 +614,7 @@ mod test {
 
         let display = grid.fit_into_width(40).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 1);
+        assert_eq!(display.dimensions.heights, vec![ 1 ]);
         assert_eq!(display.dimensions.widths, vec![ 1 ]);
 
         assert_eq!(display.width(), 1);
@@ -631,7 +631,7 @@ mod test {
 
         let display = grid.fit_into_width(10).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 1);
+        assert_eq!(display.dimensions.heights, vec![ 1 ]);
         assert_eq!(display.dimensions.widths, vec![ 10 ]);
 
         assert_eq!(display.width(), 10);
@@ -661,7 +661,7 @@ mod test {
 
         let display = grid.fit_into_width(40).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 1);
+        assert_eq!(display.dimensions.heights, vec![ 1 ]);
         assert_eq!(display.dimensions.widths, vec![ 1, 1 ]);
 
         assert_eq!(display.width(), 1 + 2 + 1);
@@ -679,7 +679,7 @@ mod test {
 
         let display = grid.fit_into_width(40).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 1);
+        assert_eq!(display.dimensions.heights, vec![ 1 ]);
         assert_eq!(display.dimensions.widths, vec![ 11, 18 ]);
 
         assert_eq!(display.width(), 11 + 2 + 18);
@@ -711,7 +711,7 @@ mod test {
             grid.add(Cell::from(*s));
         }
 
-        let bits = "one  two three  four\nfive six seven  eight\nnine ten eleven twelve\n";
+        let bits = "one  two three  four\nfive six seven  eight\nnine ten eleven twelve";
         assert_eq!(grid.fit_into_width(24).unwrap().to_string(), bits);
         assert_eq!(grid.fit_into_width(24).unwrap().row_count(), 3);
     }
@@ -729,7 +729,7 @@ mod test {
             grid.add(Cell::from(*s));
         }
 
-        let bits = "one |two|three |four\nfive|six|seven |eight\nnine|ten|eleven|twelve\n";
+        let bits = "one |two|three |four\nfive|six|seven |eight\nnine|ten|eleven|twelve";
         assert_eq!(grid.fit_into_width(24).unwrap().to_string(), bits);
         assert_eq!(grid.fit_into_width(24).unwrap().row_count(), 3);
     }
@@ -749,7 +749,7 @@ mod test {
             grid.add(cell);
         }
 
-        let bits = " one two  three   four\nfive six  seven  eight\nnine ten eleven twelve\n";
+        let bits = " one two  three   four\nfive six  seven  eight\nnine ten eleven twelve";
         assert_eq!(grid.fit_into_width(24).unwrap().to_string(), bits);
         assert_eq!(grid.fit_into_width(24).unwrap().row_count(), 3);
     }
@@ -769,7 +769,7 @@ mod test {
             grid.add(cell);
         }
 
-        let bits = " one|two| three|  four\nfive|six| seven| eight\nnine|ten|eleven|twelve\n";
+        let bits = " one|two| three|  four\nfive|six| seven| eight\nnine|ten|eleven|twelve";
         assert_eq!(grid.fit_into_width(24).unwrap().to_string(), bits);
         assert_eq!(grid.fit_into_width(24).unwrap().row_count(), 3);
     }
@@ -798,7 +798,7 @@ mod test {
 
         let display = grid.fit_into_width(99).unwrap();
 
-        assert_eq!(display.dimensions.num_lines, 1);
+        assert_eq!(display.dimensions.heights, vec![ 1 ]);
         assert_eq!(display.dimensions.widths, vec![ 4 ]);
 
         assert_eq!(display.width(), 4);
