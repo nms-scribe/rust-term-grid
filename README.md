@@ -1,22 +1,10 @@
 # rust-term-grid 
 
-*This project is a fork of the original. I've added the ability to print out cells using multiple lines. Changes are not fully tested and this fork is not up to standards to submit a pull request.*
+*This project is a fork of the original. I've added the ability to print out cells using multiple lines. Changes are not fully tested and this fork is not up to standards to submit a pull request. This crate is not hosted in any repository.*
 
 This library arranges textual data in a grid format suitable for fixed-width fonts, using an algorithm to minimise the amount of space needed.
 
 ### [View the Rustdoc](https://docs.rs/term_grid)
-
-
-# Installation
-
-This crate works with [Cargo](https://crates.io). Add the following to your `Cargo.toml` dependencies section:
-
-```toml
-[dependencies]
-term_grid = "0.2"
-```
-
-The earliest version of Rust that this crate is tested against is [Rust v1.31.0][rustc-url].
 
 
 ## Usage
