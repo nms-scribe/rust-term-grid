@@ -1,11 +1,6 @@
-# rust-term-grid [![term-grid on crates.io][crates-badge]][crates-url] [![Minimum Rust Version 1.31.0][rustc-badge]][rustc-url] [![Build status][travis-badge]][travis-url]
+# rust-term-grid 
 
-[crates-badge]: https://meritbadge.herokuapp.com/term-grid
-[crates-url]: https://crates.io/crates/term-grid
-[travis-badge]: https://travis-ci.org/ogham/rust-term-grid.svg?branch=master
-[travis-url]: https://travis-ci.org/github/ogham/rust-term-grid
-[rustc-badge]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
-[rustc-url]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
+*This project is a fork of the original. I've added the ability to print out cells using multiple lines. Changes are not fully tested and this fork is not up to standards to submit a pull request.*
 
 This library arranges textual data in a grid format suitable for fixed-width fonts, using an algorithm to minimise the amount of space needed.
 
