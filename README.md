@@ -1,6 +1,6 @@
 # rust-term-grid 
 
-*This project is a fork of the original. I've added the ability to print out cells using multiple lines. Changes are not fully tested and this fork is not up to standards to submit a pull request. This version of the crate is not hosted in any repository.*
+*NMS: This project is a fork of the original. I've added the ability to print out cells using multiple lines, and some other formatting ideas. Changes are not fully tested and this fork is not up to standards to submit a pull request. This version of the crate is not hosted in any repository.*
 
 This library arranges textual data in a grid format suitable for fixed-width fonts, using an algorithm to minimise the amount of space needed.
 

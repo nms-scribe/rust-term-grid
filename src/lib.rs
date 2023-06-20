@@ -272,9 +272,13 @@ impl Grid {
 
     /// Creates a new grid view with the given options.
     pub fn new(options: GridOptions) -> Self {
-        let cells = Vec::new();
+        Self::new_with_cells(options, Vec::new())
+    }
+
+    /// Creates a new grid view with the given options and a vector of cells. (NMS Added)
+    pub fn new_with_cells(options: GridOptions, cells: Vec<Cell>) -> Self {
         Self { options, cells, widest_cell_length: 0,
-               width_sum: 0, cell_count: 0 }
+            width_sum: 0, cell_count: 0 }
     }
 
     /// Reserves space in the vector for the given number of additional cells
