@@ -1,3 +1,5 @@
+#![deprecated = "This fork is no longer in use by my other projects, and no longer maintainted. The original project this is forked from is still available."]
+
 #![warn(future_incompatible)]
 #![warn(missing_copy_implementations)]
 #![warn(missing_docs)]
