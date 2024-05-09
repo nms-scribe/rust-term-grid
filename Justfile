@@ -24,3 +24,4 @@ test:
 test-release:
     cargo +{{MIN_RUST}} test --all --release --verbose
     cargo +stable       test --all --release --verbose
+
